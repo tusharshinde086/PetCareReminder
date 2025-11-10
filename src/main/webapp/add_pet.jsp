@@ -1,35 +1,35 @@
-<!DOCTYPE html>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <html>
-<head><meta charset="utf-8"><title>Add Pet</title></head>
+<head>
+    <title>Add New Pet</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
 <body>
-  <h2>Add Pet</h2>
-  <form action="AddPetServlet" method="post">
-    <label>Name:</label><input type="text" name="pet_name" required><br>
-    <label>Type:</label>
-    <select name="type">
-      <option>Dog</option>
-      <option>Cat</option>
-      <option>Bird</option>
-      <option>Rabbit</option>
-      <option value="other">Other...</option>
-    </select>
-    <input type="text" name="customType" placeholder="Enter custom type" style="display:none;"><br>
-    <label>Breed:</label><input type="text" name="breed"><br>
-    <label>Age:</label><input type="number" name="age"><br>
-    <label>Gender:</label>
-    <select name="gender">
-      <option>Male</option>
-      <option>Female</option>
-    </select><br>
-    <input type="submit" value="Add Pet">
-  </form>
+<h2>Add New Pet</h2>
 
-<script>
-const sel = document.querySelector('select[name=type]');
-const ct = document.querySelector('input[name=customType]');
-sel.addEventListener('change', e => {
-  ct.style.display = e.target.value === 'other' ? 'inline-block' : 'none';
-});
-</script>
+<form action="AddPetServlet" method="post">
+    <label>Pet Name:</label>
+    <input type="text" name="name" placeholder="Enter pet name" required><br><br>
+
+    <label>Type:</label>
+    <select name="type" required>
+        <option value="">--Select Type--</option>
+        <option value="Dog">Dog</option>
+        <option value="Cat">Cat</option>
+        <option value="Bird">Bird</option>
+        <option value="Fish">Fish</option>
+        <option value="Other">Other</option>
+    </select><br><br>
+
+    <label>Age (in years):</label>
+    <input type="number" name="age" min="0" placeholder="e.g. 3" required><br><br>
+
+    <label>Owner Name:</label>
+    <input type="text" name="owner_name" placeholder="Enter owner name" required><br><br>
+
+    <input type="submit" value="Add Pet">
+    <a href="DashboardServlet">Back to Dashboard</a>
+</form>
+
 </body>
 </html>

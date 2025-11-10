@@ -1,73 +1,108 @@
-<%@ page import="java.util.*,com.petcare.dao.PetDAO,com.petcare.dao.ActivityDAO,com.petcare.model.Pet" %>
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%
-    List<Pet> pets = PetDAO.getAllPets();
-%>
-<!DOCTYPE html>
+<%@ page import="java.util.*,com.petcare.model.Pet,com.petcare.model.Activity" %>
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>PetCare Dashboard</title>
+    <title>Pet Care Dashboard</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <script>
+        // 🔔 Popup reminder for activities
+        function checkReminders() {
+            const activities = document.querySelectorAll(".activity-time");
+            const now = new Date();
+            const currentTime = now.getHours() + ":" + now.getMinutes();
+
+            activities.forEach(act => {
+                const scheduled = act.getAttribute("data-time");
+                const status = act.getAttribute("data-status");
+
+                if (status === "Pending" && scheduled === currentTime) {
+                    alert("Reminder: " + act.getAttribute("data-name") + " for Pet ID " + act.getAttribute("data-petid"));
+                }
+            });
+        }
+        // Run every 1 minute
+        setInterval(checkReminders, 60000);
+    </script>
 </head>
 <body>
-  <h2>PetCare Dashboard</h2>
-  <a href="add_pet.jsp">Add Pet</a> | <a href="add_activity.jsp">Add Activity</a>
-  <hr>
-  <h3>Pets</h3>
-  <table border="1">
-    <tr><th>Name</th><th>Type</th><th>Breed</th><th>Age</th><th>Gender</th></tr>
-    <%
-      for (Pet p : pets) {
+    <h2>Pet Care Reminder Dashboard</h2>
+
+    <div class="nav-links">
+        <a href="add_pet.jsp">Add New Pet</a> |
+        <a href="add_activity.jsp">Add Activity</a>
+    </div>
+    <hr>
+
+    <% 
+        List<Pet> pets = (List<Pet>) request.getAttribute("pets");
+        List<Activity> acts = (List<Activity>) request.getAttribute("activities");
     %>
-    <tr>
-      <td><%=p.getPetName()%></td>
-      <td><%=p.getType()%></td>
-      <td><%=p.getBreed()%></td>
-      <td><%=p.getAge()%></td>
-      <td><%=p.getGender()%></td>
-    </tr>
-    <% } %>
-  </table>
 
-  <hr>
-  <h3>Activities</h3>
-  <!-- Basic activities table fetched server-side or implement ListActivities servlet -->
-  <div id="activitiesArea">
-    <!-- Could fill with a servlet include to list activities -->
-  </div>
+    <h3>All Pets</h3>
+    <table border="1" cellpadding="6" cellspacing="0">
+        <tr>
+            <th>Pet ID</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Age</th>
+            <th>Owner</th>
+            <th>Actions</th>
+        </tr>
+        <% if (pets != null) {
+            for (Pet p : pets) { %>
+        <tr>
+            <td><%= p.getId() %></td>
+            <td><%= p.getName() %></td>
+            <td><%= p.getType() %></td>
+            <td><%= p.getAge() %></td>
+            <td><%= p.getOwnerName() %></td>
+            <td>
+                <a href="EditPetServlet?id=<%=p.getId()%>">Edit</a> |
+                <a href="DeletePetServlet?id=<%=p.getId()%>" onclick="return confirm('Are you sure you want to delete this pet?')">Delete</a>
+            </td>
+        </tr>
+        <% } } else { %>
+        <tr><td colspan="6">No pets found.</td></tr>
+        <% } %>
+    </table>
 
-<script>
-/* Popup reminder check every 60s, presents action buttons via confirm/prompts.
-   Better UX: replace with modal UI or SweetAlert for nicer buttons. */
-setInterval(() => {
-  fetch('ReminderCheckServlet')
-    .then(res => res.json())
-    .then(list => {
-      list.forEach(reminder => {
-        // Build a small custom confirm with multiple choices via prompt
-        // We'll show a native confirm for Done or else check overdue
-        if (confirm("⏰ Reminder: " + reminder.petName + " - " + reminder.activityName + " at " + reminder.time + "\n\nPress OK to mark DONE, Cancel to mark DUE/OVERDUE.")) {
-          updateStatus(reminder.activityId, 'Done');
-        } else {
-          // check if now > scheduled time then mark Overdue
-          let now = new Date();
-          let parts = reminder.time.split(':');
-          let remT = new Date(); remT.setHours(parseInt(parts[0]), parseInt(parts[1]),0,0);
-          if (now > remT) updateStatus(reminder.activityId, 'Overdue');
-          else updateStatus(reminder.activityId, 'Due');
-        }
-      });
-    })
-    .catch(err => console.log(err));
-}, 60000); // 60000 ms = 1 minute
+    <h3>Activities</h3>
+    <table border="1" cellpadding="6" cellspacing="0">
+        <tr>
+            <th>Activity ID</th>
+            <th>Pet ID</th>
+            <th>Activity</th>
+            <th>Time</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+        <% if (acts != null) {
+            for (Activity a : acts) { %>
+        <tr class="activity-time" 
+            data-time="<%= a.getActivityTime() %>" 
+            data-name="<%= a.getActivityName() %>" 
+            data-status="<%= a.getStatus() %>" 
+            data-petid="<%= a.getPetId() %>">
+            <td><%= a.getActivityId() %></td>
+            <td><%= a.getPetId() %></td>
+            <td><%= a.getActivityName() %></td>
+            <td><%= a.getActivityTime() %></td>
+            <td><%= a.getStatus() %></td>
+            <td>
+                <form action="UpdateActivityStatusServlet" method="post" style="display:inline;">
+                    <input type="hidden" name="activityId" value="<%= a.getActivityId() %>">
+                    <select name="status">
+                        <option <%= a.getStatus().equals("Pending") ? "selected" : "" %>>Pending</option>
+                        <option <%= a.getStatus().equals("Done") ? "selected" : "" %>>Done</option>
+                        <option <%= a.getStatus().equals("Overdue") ? "selected" : "" %>>Overdue</option>
+                    </select>
+                    <input type="submit" value="Update">
+                </form>
+            </td>
+        </tr>
+        <% } } else { %>
+        <tr><td colspan="6">No activities found.</td></tr>
+        <% } %>
+    </table>
 
-function updateStatus(id,status){
-  fetch('UpdateStatusServlet',{
-    method:'POST',
-    headers: {'Content-Type':'application/x-www-form-urlencoded'},
-    body: 'activityId=' + encodeURIComponent(id) + '&status=' + encodeURIComponent(status)
-  }).then(r=>r.json().catch(()=>{}));
-}
-</script>
 </body>
 </html>
