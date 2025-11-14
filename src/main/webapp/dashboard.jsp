@@ -1,108 +1,101 @@
-<%@ page import="java.util.*,com.petcare.model.Pet,com.petcare.model.Activity" %>
+<%@ page import="java.util.*, com.petcare.model.Activity" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <html>
 <head>
-    <title>Pet Care Dashboard</title>
+    <title>Pet Care Reminder Dashboard</title>
     <link rel="stylesheet" href="assets/style.css">
+
     <script>
-        // 🔔 Popup reminder for activities
+        // Check reminders every minute
         function checkReminders() {
-            const activities = document.querySelectorAll(".activity-time");
+            const rows = document.querySelectorAll(".activity-row");
             const now = new Date();
-            const currentTime = now.getHours() + ":" + now.getMinutes();
+            const currentTime = now.getHours().toString().padStart(2, '0') + ":" +
+                                now.getMinutes().toString().padStart(2, '0');
 
-            activities.forEach(act => {
-                const scheduled = act.getAttribute("data-time");
-                const status = act.getAttribute("data-status");
+            rows.forEach(row => {
+                const time = row.dataset.time;
+                const name = row.dataset.name;
+                const status = row.dataset.status;
 
-                if (status === "Pending" && scheduled === currentTime) {
-                    alert("Reminder: " + act.getAttribute("data-name") + " for Pet ID " + act.getAttribute("data-petid"));
+                if (status === "Pending" && time === currentTime) {
+                    alert("Reminder: Time for activity — " + name);
                 }
             });
         }
-        // Run every 1 minute
-        setInterval(checkReminders, 60000);
+
+        setInterval(checkReminders, 60000); // 1 minute
     </script>
 </head>
+
 <body>
-    <h2>Pet Care Reminder Dashboard</h2>
 
-    <div class="nav-links">
-        <a href="add_pet.jsp">Add New Pet</a> |
-        <a href="add_activity.jsp">Add Activity</a>
-    </div>
-    <hr>
+<header>
+    <h1>🐾 Pet Care Reminder Dashboard</h1>
+</header>
 
-    <% 
-        List<Pet> pets = (List<Pet>) request.getAttribute("pets");
-        List<Activity> acts = (List<Activity>) request.getAttribute("activities");
+<div class="nav-links">
+    <a href="add_activity.jsp">➕ Add New Activity</a>
+</div>
+
+<hr>
+
+<%
+    List<Activity> activities = (List<Activity>) request.getAttribute("activities");
+%>
+
+<h2>All Activities</h2>
+
+<table border="1" cellpadding="8" cellspacing="0">
+    <tr>
+        <th>ID</th>
+        <th>Activity</th>
+        <th>Time</th>
+        <th>Status</th>
+        <th>Actions</th>
+    </tr>
+
+    <%
+        if (activities != null && !activities.isEmpty()) {
+            for (Activity a : activities) {
     %>
 
-    <h3>All Pets</h3>
-    <table border="1" cellpadding="6" cellspacing="0">
-        <tr>
-            <th>Pet ID</th>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Age</th>
-            <th>Owner</th>
-            <th>Actions</th>
-        </tr>
-        <% if (pets != null) {
-            for (Pet p : pets) { %>
-        <tr>
-            <td><%= p.getId() %></td>
-            <td><%= p.getName() %></td>
-            <td><%= p.getType() %></td>
-            <td><%= p.getAge() %></td>
-            <td><%= p.getOwnerName() %></td>
-            <td>
-                <a href="EditPetServlet?id=<%=p.getId()%>">Edit</a> |
-                <a href="DeletePetServlet?id=<%=p.getId()%>" onclick="return confirm('Are you sure you want to delete this pet?')">Delete</a>
-            </td>
-        </tr>
-        <% } } else { %>
-        <tr><td colspan="6">No pets found.</td></tr>
-        <% } %>
-    </table>
+    <tr class="activity-row"
+        data-time="<%= a.getActivityTime() %>"
+        data-name="<%= a.getActivityName() %>"
+        data-status="<%= a.getStatus() %>">
 
-    <h3>Activities</h3>
-    <table border="1" cellpadding="6" cellspacing="0">
+        <td><%= a.getActivityId() %></td>
+        <td><%= a.getActivityName() %></td>
+        <td><%= a.getActivityTime() %></td>
+        <td><%= a.getStatus() %></td>
+
+        <td>
+            <form action="UpdateActivityStatusServlet" method="get" style="display:inline;">
+                <input type="hidden" name="id" value="<%= a.getActivityId() %>">
+
+                <select name="status">
+                    <option value="Pending" <%= a.getStatus().equals("Pending") ? "selected" : "" %>>Pending</option>
+                    <option value="Done" <%= a.getStatus().equals("Done") ? "selected" : "" %>>Done</option>
+                    <option value="Overdue" <%= a.getStatus().equals("Overdue") ? "selected" : "" %>>Overdue</option>
+                </select>
+
+                <button type="submit">Update</button>
+            </form>
+
+            <a href="DeleteActivityServlet?id=<%= a.getActivityId() %>"
+               onclick="return confirm('Delete this activity?')">Delete</a>
+        </td>
+
+    </tr>
+
+    <%  } } else { %>
         <tr>
-            <th>Activity ID</th>
-            <th>Pet ID</th>
-            <th>Activity</th>
-            <th>Time</th>
-            <th>Status</th>
-            <th>Actions</th>
+            <td colspan="5">No activities available.</td>
         </tr>
-        <% if (acts != null) {
-            for (Activity a : acts) { %>
-        <tr class="activity-time" 
-            data-time="<%= a.getActivityTime() %>" 
-            data-name="<%= a.getActivityName() %>" 
-            data-status="<%= a.getStatus() %>" 
-            data-petid="<%= a.getPetId() %>">
-            <td><%= a.getActivityId() %></td>
-            <td><%= a.getPetId() %></td>
-            <td><%= a.getActivityName() %></td>
-            <td><%= a.getActivityTime() %></td>
-            <td><%= a.getStatus() %></td>
-            <td>
-                <form action="UpdateActivityStatusServlet" method="post" style="display:inline;">
-                    <input type="hidden" name="activityId" value="<%= a.getActivityId() %>">
-                    <select name="status">
-                        <option <%= a.getStatus().equals("Pending") ? "selected" : "" %>>Pending</option>
-                        <option <%= a.getStatus().equals("Done") ? "selected" : "" %>>Done</option>
-                        <option <%= a.getStatus().equals("Overdue") ? "selected" : "" %>>Overdue</option>
-                    </select>
-                    <input type="submit" value="Update">
-                </form>
-            </td>
-        </tr>
-        <% } } else { %>
-        <tr><td colspan="6">No activities found.</td></tr>
-        <% } %>
-    </table>
+    <% } %>
+
+</table>
 
 </body>
 </html>

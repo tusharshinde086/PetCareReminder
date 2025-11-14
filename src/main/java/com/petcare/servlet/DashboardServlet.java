@@ -1,21 +1,22 @@
 package com.petcare.servlet;
 
-import jakarta.servlet.*;
-import jakarta.servlet.http.*;
-import java.io.IOException;
-import java.util.*;
-import com.petcare.dao.PetDAO;
-import com.petcare.model.Pet;
+import com.petcare.dao.ActivityDAO;
 import com.petcare.model.Activity;
 
-public class DashboardServlet extends HttpServlet {
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        PetDAO dao = new PetDAO();
-        List<Pet> pets = dao.getAllPets();
-        List<Activity> acts = dao.getActivities();
+import javax.servlet.*;
+import javax.servlet.http.*;
+import java.io.IOException;
+import java.util.List;
 
-        req.setAttribute("pets", pets);
-        req.setAttribute("activities", acts);
-        req.getRequestDispatcher("dashboard.jsp").forward(req, resp);
+public class DashboardServlet extends HttpServlet {
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        List<Activity> activities = ActivityDAO.getAllActivities();
+        request.setAttribute("activities", activities);
+
+        request.getRequestDispatcher("dashboard.jsp").forward(request, response);
     }
 }
