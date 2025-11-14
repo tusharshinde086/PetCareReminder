@@ -8,7 +8,7 @@
 <body>
 
 <header>
-    <h1>🐾 Welcome to Pet Care Reminder</h1>
+    <h1>🐾 Welcome to Pet Care Reminder -- </h1>
 </header>
 
 <div class="container" style="text-align:center; margin-top:20px;">
